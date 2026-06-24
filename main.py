@@ -20,9 +20,12 @@ def extract(url: str):
             "skip_download": True,
             "extract_flat": False,
             "nocheckcertificate": True,
+            "cookiefile": "cookies.txt"
         }
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
+
         return {"status": "ok", "data": info}
 
     except Exception as e:
