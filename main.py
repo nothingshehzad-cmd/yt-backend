@@ -1,25 +1,23 @@
 import os
-import base64
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import yt_dlp
 
-# Cookie file ka absolute path set karein
-COOKIE_PATH = os.path.join(os.getcwd(), "cookies.txt")
+# Cookie file ka path
+COOKIE_PATH = "cookies.txt"
 
-# Decode Base64 cookies and write to cookies.txt (Robust version)
+# Environment variable se cookies ko seedha write karein
 if "YOUTUBE_COOKIES_B64" in os.environ:
     try:
-        # Extra spaces/newlines remove karein
-        b64_str = os.environ["YOUTUBE_COOKIES_B64"].strip()
-        decoded = base64.b64decode(b64_str)
+        # Pura cookies ka text read karein
+        cookies_content = os.environ["YOUTUBE_COOKIES_B64"]
         
-        # Binary write mode mein save karein
-        with open(COOKIE_PATH, "wb") as f:
-            f.write(decoded)
-        print(f"cookies.txt written successfully at {COOKIE_PATH}")
+        # File mein save karein (encoding="utf-8" zaroori hai)
+        with open(COOKIE_PATH, "w", encoding="utf-8") as f:
+            f.write(cookies_content)
+        print("cookies.txt successfully created from environment variable.")
     except Exception as e:
-        print("Failed to decode cookies:", e)
+        print(f"Error creating cookies file: {e}")
 
 app = FastAPI()
 
@@ -33,9 +31,9 @@ app.add_middleware(
 
 @app.get("/extract")
 def extract(url: str):
-    # Check karein ki cookies file exist karti hai ya nahi
+    # Check karein ki cookies file exist karti hai
     if not os.path.exists(COOKIE_PATH):
-        return {"status": "error", "message": "cookies.txt not found"}
+        return {"status": "error", "message": "cookies.txt file not found"}
 
     try:
         ydl_opts = {
@@ -43,8 +41,7 @@ def extract(url: str):
             "skip_download": True,
             "extract_flat": False,
             "nocheckcertificate": True,
-            "cookiefile": COOKIE_PATH, # Absolute path use karein
-            "cachedir": False          # Caching issue se bachne ke liye
+            "cookiefile": COOKIE_PATH
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
