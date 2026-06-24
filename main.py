@@ -1,13 +1,18 @@
 import os
-
-# Write cookies from env to file
-if "YOUTUBE_COOKIES" in os.environ:
-    with open("cookies.txt", "w", encoding="utf-8") as f:
-        f.write(os.environ["YOUTUBE_COOKIES"])
-
+import base64
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import yt_dlp
+
+# Decode Base64 cookies and write to cookies.txt
+if "YOUTUBE_COOKIES_B64" in os.environ:
+    try:
+        decoded = base64.b64decode(os.environ["YOUTUBE_COOKIES_B64"])
+        with open("cookies.txt", "wb") as f:
+            f.write(decoded)
+        print("cookies.txt written successfully")
+    except Exception as e:
+        print("Failed to decode cookies:", e)
 
 app = FastAPI()
 
