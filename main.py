@@ -14,7 +14,16 @@ app.add_middleware(
 
 @app.get("/extract")
 def extract(url: str):
-    ydl_opts = {"quiet": True, "skip_download": True}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-    return info
+    try:
+        ydl_opts = {
+            "quiet": True,
+            "skip_download": True,
+            "extract_flat": False,
+            "nocheckcertificate": True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+        return {"status": "ok", "data": info}
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
