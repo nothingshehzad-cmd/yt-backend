@@ -1,3 +1,10 @@
+import os
+
+# Write cookies from env to file
+if "YOUTUBE_COOKIES" in os.environ:
+    with open("cookies.txt", "w", encoding="utf-8") as f:
+        f.write(os.environ["YOUTUBE_COOKIES"])
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import yt_dlp
