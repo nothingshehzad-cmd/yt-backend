@@ -1,27 +1,11 @@
 import os
+import yt_dlp
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-import yt_dlp
-
-COOKIE_PATH = "cookies.txt"
-
-# Cookie setup
-if "YOUTUBE_COOKIES_B64" in os.environ:
-    try:
-        with open(COOKIE_PATH, "w", encoding="utf-8") as f:
-            f.write(os.environ["YOUTUBE_COOKIES_B64"])
-    except Exception as e:
-        print(f"Error: {e}")
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 @app.get("/extract")
 def extract(url: str):
@@ -29,7 +13,8 @@ def extract(url: str):
         ydl_opts = {
             "quiet": True,
             "skip_download": True,
-            "cookiefile": COOKIE_PATH if os.path.exists(COOKIE_PATH) else None
+            "extract_flat": "in_playlist", # Playlist handle karne ke liye
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -37,9 +22,7 @@ def extract(url: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-# NAYA APPROACH: Redirect to Direct URL (Faster & No Timeout)
 @app.get("/download")
 async def download(video_url: str):
-    # Hum video download nahi karenge, balki user ko direct file link par bhej denge
-    # Isse server par load nahi padega aur timeout nahi hoga
+    # Direct streaming URL par bhej dega, browser download shuru kar dega
     return RedirectResponse(url=video_url)
