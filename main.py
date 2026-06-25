@@ -1,6 +1,8 @@
 import os
+import uuid
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import yt_dlp
 
 # Cookie file ka path
@@ -9,10 +11,7 @@ COOKIE_PATH = "cookies.txt"
 # Environment variable se cookies ko seedha write karein
 if "YOUTUBE_COOKIES_B64" in os.environ:
     try:
-        # Pura cookies ka text read karein
         cookies_content = os.environ["YOUTUBE_COOKIES_B64"]
-        
-        # File mein save karein (encoding="utf-8" zaroori hai)
         with open(COOKIE_PATH, "w", encoding="utf-8") as f:
             f.write(cookies_content)
         print("cookies.txt successfully created from environment variable.")
@@ -31,7 +30,6 @@ app.add_middleware(
 
 @app.get("/extract")
 def extract(url: str):
-    # Check karein ki cookies file exist karti hai
     if not os.path.exists(COOKIE_PATH):
         return {"status": "error", "message": "cookies.txt file not found"}
 
@@ -48,6 +46,35 @@ def extract(url: str):
             info = ydl.extract_info(url, download=False)
 
         return {"status": "ok", "data": info}
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ⭐ NEW: Direct Download Endpoint (Fixes new-tab issue)
+@app.get("/download")
+def download(video_url: str):
+    try:
+        # Temporary filename
+        filename = f"{uuid.uuid4()}.mp4"
+
+        ydl_opts = {
+            "outtmpl": filename,
+            "cookiefile": COOKIE_PATH,
+            "quiet": True,
+            "format": "bestvideo+bestaudio/best"
+        }
+
+        # Download file
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([video_url])
+
+        # Return file as attachment
+        return FileResponse(
+            filename,
+            media_type="video/mp4",
+            filename="video.mp4"
+        )
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
